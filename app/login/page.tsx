@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { checkAuth, setUserEmail } from "@/lib/auth";
+import { setUserEmail } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,16 +34,27 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Simple client-side auth check (demo purposes)
-    if (checkAuth(formData.email, formData.password)) {
-      setUserEmail(formData.email);
-      toast.success("Login successful!");
-      router.push("/");
-    } else {
-      toast.error("Invalid email or password");
-    }
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    setLoading(false);
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setUserEmail(formData.email);
+        toast.success("Login successful!");
+        router.push("/");
+      } else {
+        toast.error(data.error || "Invalid email or password");
+      }
+    } catch (error) {
+      toast.error("An error occurred during login");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,7 +96,9 @@ export default function LoginPage() {
                 required
                 className="bg-slate-950 border-slate-700 focus:border-cyan-500"
               />
-              <p className="text-xs text-slate-500">Demo password: demo123</p>
+              <p className="text-xs text-slate-500">
+                Note: Set your password directly in the database
+              </p>
             </div>
           </CardContent>
           <CardFooter>

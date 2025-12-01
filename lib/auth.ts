@@ -1,14 +1,4 @@
-// Simple auth utility for demo purposes
-// Using hardcoded credentials until proper auth is set up
-
-const DEMO_USER = {
-  email: "bidursapkota00@gmail.com",
-  password: "demo123", // Temporary password for demo
-};
-
-export function checkAuth(email: string, password: string): boolean {
-  return email === DEMO_USER.email && password === DEMO_USER.password;
-}
+// Auth utility functions for client-side state management
 
 export function getUserEmail(): string | null {
   if (typeof window !== "undefined") {
