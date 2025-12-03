@@ -323,7 +323,7 @@ export default function AdminPage({
                 </RadioGroup>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 mb-6">
                 <Label htmlFor="explanation">Explanation</Label>
                 <Input
                   id="explanation"

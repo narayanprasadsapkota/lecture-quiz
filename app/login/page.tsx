@@ -76,7 +76,7 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="bidursapkota00@gmail.com"
+                placeholder="bidur@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -84,7 +84,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-6">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -96,9 +96,6 @@ export default function LoginPage() {
                 required
                 className="bg-slate-950 border-slate-700 focus:border-cyan-500"
               />
-              <p className="text-xs text-slate-500">
-                Note: Set your password directly in the database
-              </p>
             </div>
           </CardContent>
           <CardFooter>

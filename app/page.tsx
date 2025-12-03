@@ -11,7 +11,14 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { PlusCircle, BookOpen, Edit, Loader2, LogOut } from "lucide-react";
+import {
+  PlusCircle,
+  BookOpen,
+  Edit,
+  Loader2,
+  LogOut,
+  FileJson,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { isAuthenticated, clearAuth } from "@/lib/auth";
@@ -82,6 +89,15 @@ export default function Home() {
                     Create New Quiz
                   </Button>
                 </Link>
+                <Link href="/create-bulk">
+                  <Button
+                    size="lg"
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                  >
+                    <FileJson className="mr-2 h-5 w-5" />
+                    Bulk Create
+                  </Button>
+                </Link>
                 <Button
                   onClick={handleLogout}
                   size="lg"
@@ -147,7 +163,7 @@ export default function Home() {
                   <Link href={`/admin/${quiz.id}`} className="w-full">
                     <Button
                       variant="outline"
-                      className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+                      className="w-full border-slate-700 text-slate-800 hover:bg-slate-200"
                     >
                       <Edit className="mr-2 h-4 w-4" /> Edit
                     </Button>

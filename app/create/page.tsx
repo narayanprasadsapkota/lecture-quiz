@@ -97,7 +97,7 @@ export default function CreateQuizPage() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 mb-6">
               <Label htmlFor="description">Description (Optional)</Label>
               <Input
                 id="description"
