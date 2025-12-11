@@ -81,6 +81,40 @@ export async function POST(
   }
 }
 
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const { title, description } = body;
+
+    if (!title) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    const [updatedQuiz] = await db
+      .update(quizzes)
+      .set({ title, description })
+      .where(eq(quizzes.id, parseInt(id)))
+      .returning();
+
+    if (!updatedQuiz) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(updatedQuiz);
+  } catch (error) {
+    console.error("Error updating quiz:", error);
+    return NextResponse.json(
+      { error: "Failed to update quiz" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

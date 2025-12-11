@@ -36,8 +36,10 @@ export default function AdminPage({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [quizTitle, setQuizTitle] = useState("");
+  const [quizDescription, setQuizDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingQuizMeta, setEditingQuizMeta] = useState(false);
   const [formData, setFormData] = useState({
     text: "",
     option1: "",
@@ -62,6 +64,7 @@ export default function AdminPage({
       if (res.ok) {
         const data = await res.json();
         setQuizTitle(data.title);
+        setQuizDescription(data.description || "");
         setQuestions(data.questions);
       }
     } catch (err) {
@@ -236,6 +239,29 @@ export default function AdminPage({
     });
   };
 
+  const handleUpdateQuizMeta = async () => {
+    try {
+      const res = await fetch(`/api/quizzes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: quizTitle,
+          description: quizDescription,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Quiz information updated successfully!");
+        setEditingQuizMeta(false);
+        fetchQuizData();
+      } else {
+        toast.error("Failed to update quiz information");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center p-4 pt-10">
       <div className="w-full max-w-4xl mb-6 flex justify-between items-center">
@@ -257,12 +283,87 @@ export default function AdminPage({
       <div className="w-full max-w-4xl space-y-6">
         <Card className="bg-slate-900 border-slate-800 text-slate-200">
           <CardHeader>
-            <CardTitle className="text-2xl text-cyan-400">
-              Manage: {quizTitle}
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              Add, edit, or remove questions from this lecture quiz.
-            </CardDescription>
+            <div className="flex justify-between items-start">
+              <div className="flex-grow">
+                {editingQuizMeta ? (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="quiz-title" className="text-slate-400">
+                        Quiz Title
+                      </Label>
+                      <Input
+                        id="quiz-title"
+                        value={quizTitle}
+                        onChange={(e) => setQuizTitle(e.target.value)}
+                        className="bg-slate-950 border-slate-700 text-white mt-1"
+                        placeholder="Enter quiz title"
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="quiz-description"
+                        className="text-slate-400"
+                      >
+                        Description
+                      </Label>
+                      <Input
+                        id="quiz-description"
+                        value={quizDescription}
+                        onChange={(e) => setQuizDescription(e.target.value)}
+                        className="bg-slate-950 border-slate-700 text-white mt-1"
+                        placeholder="Enter quiz description (optional)"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleUpdateQuizMeta}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Save className="mr-2 h-4 w-4" /> Save
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingQuizMeta(false);
+                          fetchQuizData();
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="border-slate-700 text-slate-800 hover:bg-slate-200"
+                      >
+                        <X className="mr-2 h-4 w-4" /> Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <CardTitle className="text-2xl text-cyan-400">
+                      {quizTitle}
+                    </CardTitle>
+                    {quizDescription && (
+                      <CardDescription className="text-slate-400 mt-2">
+                        {quizDescription}
+                      </CardDescription>
+                    )}
+                    {!quizDescription && (
+                      <CardDescription className="text-slate-500 mt-2 italic">
+                        No description set. Click edit to add one.
+                      </CardDescription>
+                    )}
+                  </>
+                )}
+              </div>
+              {!editingQuizMeta && (
+                <Button
+                  onClick={() => setEditingQuizMeta(true)}
+                  size="sm"
+                  variant="outline"
+                  className="border-cyan-600 text-cyan-400 hover:bg-cyan-950"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
