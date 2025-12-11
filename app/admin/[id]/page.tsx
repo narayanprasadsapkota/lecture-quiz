@@ -498,6 +498,35 @@ export default function AdminPage({
                         />
                       ))}
                     </div>
+                    <div className="space-y-2">
+                      <Label>Correct Answer</Label>
+                      <RadioGroup
+                        value={formData.correctAnswerIndex}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            correctAnswerIndex: val,
+                          }))
+                        }
+                        className="flex gap-4"
+                      >
+                        {[0, 1, 2, 3].map((index) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-2"
+                          >
+                            <RadioGroupItem
+                              value={index.toString()}
+                              id={`edit-correct-${index}`}
+                              className="border-slate-500 text-cyan-500"
+                            />
+                            <Label htmlFor={`edit-correct-${index}`}>
+                              Option {index + 1}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
                     <Input
                       placeholder="Explanation"
                       value={formData.explanation}
