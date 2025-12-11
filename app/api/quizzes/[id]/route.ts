@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { quizzes, questions } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 
 export async function GET(
   request: Request,
@@ -22,7 +22,8 @@ export async function GET(
     const quizQuestions = await db
       .select()
       .from(questions)
-      .where(eq(questions.quizId, parseInt(id)));
+      .where(eq(questions.quizId, parseInt(id)))
+      .orderBy(asc(questions.order));
 
     return NextResponse.json({
       ...quiz,
@@ -60,6 +61,17 @@ export async function POST(
       );
     }
 
+    // Get the current max order for this quiz
+    const existingQuestions = await db
+      .select()
+      .from(questions)
+      .where(eq(questions.quizId, parseInt(id)));
+
+    const maxOrder =
+      existingQuestions.length > 0
+        ? Math.max(...existingQuestions.map((q) => q.order || 0))
+        : -1;
+
     const [newQuestion] = await db
       .insert(questions)
       .values({
@@ -68,6 +80,7 @@ export async function POST(
         options,
         correctAnswer,
         explanation,
+        order: maxOrder + 1,
       })
       .returning();
 

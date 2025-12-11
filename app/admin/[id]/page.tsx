@@ -14,7 +14,17 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Loader2, Plus, ArrowLeft, Trash2, Edit2, Save, X } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  ArrowLeft,
+  Trash2,
+  Edit2,
+  Save,
+  X,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
@@ -256,6 +266,29 @@ export default function AdminPage({
         fetchQuizData();
       } else {
         toast.error("Failed to update quiz information");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleReorder = async (
+    questionId: number,
+    direction: "up" | "down"
+  ) => {
+    try {
+      const res = await fetch(`/api/questions/${questionId}/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
+      });
+
+      if (res.ok) {
+        toast.success(`Question moved ${direction}!`);
+        fetchQuizData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to reorder question");
       }
     } catch (error) {
       toast.error("An error occurred");
@@ -565,6 +598,26 @@ export default function AdminPage({
                           <p className="text-slate-300 mt-2">{question.text}</p>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleReorder(question.id, "up")}
+                            variant="outline"
+                            disabled={index === 0}
+                            className="border-slate-600 text-slate-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Move up"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleReorder(question.id, "down")}
+                            variant="outline"
+                            disabled={index === questions.length - 1}
+                            className="border-slate-600 text-slate-400 hover:bg-slate-800 disabled:opacity-30"
+                            title="Move down"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
                           <Button
                             size="sm"
                             onClick={() => startEdit(question)}

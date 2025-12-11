@@ -24,5 +24,6 @@ export const questions = pgTable("questions", {
   options: text("options").array().notNull(), // Array of 4 options
   correctAnswer: text("correct_answer").notNull(),
   explanation: text("explanation").notNull(),
+  order: integer("order").notNull().default(0), // Order of question appearance
   createdAt: timestamp("created_at").defaultNow(),
 });
