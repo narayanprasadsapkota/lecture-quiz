@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { quizzes } from "@/lib/db/schema";
-import { desc } from "drizzle-orm";
+import { quizzes, questions } from "@/lib/db/schema";
+import { desc, eq, count } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -10,6 +10,7 @@ export async function GET() {
         id: quizzes.id,
         title: quizzes.title,
         description: quizzes.description,
+        subjectId: quizzes.subjectId,
       })
       .from(quizzes)
       .orderBy(desc(quizzes.createdAt));
@@ -17,8 +18,6 @@ export async function GET() {
     // Get question counts for each quiz
     const quizzesWithCounts = await Promise.all(
       allQuizzes.map(async (quiz) => {
-        const { questions } = await import("@/lib/db/schema");
-        const { eq, count } = await import("drizzle-orm");
         const result = await db
           .select({ count: count() })
           .from(questions)
@@ -44,7 +43,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, description } = body;
+    const { title, description, subjectId } = body;
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -55,6 +54,7 @@ export async function POST(request: Request) {
       .values({
         title,
         description: description || "",
+        subjectId: subjectId ? parseInt(subjectId) : null,
         userId: 1, // Using the demo user we created
       })
       .returning();

@@ -5,6 +5,7 @@ import { quizzes, questions } from "@/lib/db/schema";
 interface BulkQuizInput {
   title: string;
   description?: string;
+  subjectId?: number;
   questions: {
     text: string;
     options: string[];
@@ -16,7 +17,7 @@ interface BulkQuizInput {
 export async function POST(request: Request) {
   try {
     const body: BulkQuizInput = await request.json();
-    const { title, description, questions: questionsData } = body;
+    const { title, description, subjectId, questions: questionsData } = body;
 
     // Validation
     if (!title) {
@@ -70,17 +71,19 @@ export async function POST(request: Request) {
       .values({
         title,
         description: description || "",
+        subjectId: subjectId || null,
         userId: 1, // Using the demo user
       })
       .returning();
 
     // Create all questions
-    const questionsToInsert = questionsData.map((q) => ({
+    const questionsToInsert = questionsData.map((q, index) => ({
       quizId: newQuiz.id,
       text: q.text,
       options: q.options,
       correctAnswer: q.correctAnswer,
       explanation: q.explanation,
+      order: index,
     }));
 
     const insertedQuestions = await db

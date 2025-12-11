@@ -12,25 +12,53 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 
+interface Subject {
+  id: number;
+  name: string;
+}
+
 export default function CreateQuizPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    subjectId: "",
   });
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
+      return;
     }
+    fetchSubjects();
   }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch("/api/subjects");
+      if (res.ok) {
+        const data = await res.json();
+        setSubjects(data);
+      }
+    } catch (error) {
+      console.error("Failed to load subjects");
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,7 +73,13 @@ export default function CreateQuizPage() {
       const res = await fetch("/api/quizzes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          subjectId:
+            formData.subjectId && formData.subjectId !== "none"
+              ? formData.subjectId
+              : null,
+        }),
       });
 
       if (res.ok) {
@@ -84,6 +118,28 @@ export default function CreateQuizPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="subject">Subject (Optional)</Label>
+              <Select
+                value={formData.subjectId}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, subjectId: value }))
+                }
+              >
+                <SelectTrigger className="w-full bg-slate-950 border-slate-700 text-slate-200">
+                  <SelectValue placeholder="Select a subject" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-950 border-slate-700 text-slate-200">
+                  <SelectItem value="none">Uncategorized</SelectItem>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id.toString()}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="title">Lecture Title</Label>
               <Input

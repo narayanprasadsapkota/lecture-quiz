@@ -12,6 +12,13 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import {
@@ -28,6 +35,11 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
+
+interface Subject {
+  id: number;
+  name: string;
+}
 
 interface Question {
   id: number;
@@ -47,7 +59,9 @@ export default function AdminPage({
   const [loading, setLoading] = useState(false);
   const [quizTitle, setQuizTitle] = useState("");
   const [quizDescription, setQuizDescription] = useState("");
+  const [quizSubjectId, setQuizSubjectId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingQuizMeta, setEditingQuizMeta] = useState(false);
   const [formData, setFormData] = useState({
@@ -66,7 +80,20 @@ export default function AdminPage({
       return;
     }
     fetchQuizData();
+    fetchSubjects();
   }, [id]);
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch("/api/subjects");
+      if (res.ok) {
+        const data = await res.json();
+        setSubjects(data);
+      }
+    } catch (error) {
+      console.error("Failed to load subjects");
+    }
+  };
 
   const fetchQuizData = async () => {
     try {
@@ -75,6 +102,7 @@ export default function AdminPage({
         const data = await res.json();
         setQuizTitle(data.title);
         setQuizDescription(data.description || "");
+        setQuizSubjectId(data.subjectId ? data.subjectId.toString() : "none");
         setQuestions(data.questions);
       }
     } catch (err) {
@@ -257,6 +285,10 @@ export default function AdminPage({
         body: JSON.stringify({
           title: quizTitle,
           description: quizDescription,
+          subjectId:
+            quizSubjectId && quizSubjectId !== "none"
+              ? parseInt(quizSubjectId)
+              : null,
         }),
       });
 
@@ -331,6 +363,30 @@ export default function AdminPage({
                         className="bg-slate-950 border-slate-700 text-white mt-1"
                         placeholder="Enter quiz title"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="quiz-subject" className="text-slate-400">
+                        Subject
+                      </Label>
+                      <Select
+                        value={quizSubjectId || "none"}
+                        onValueChange={(value) => setQuizSubjectId(value)}
+                      >
+                        <SelectTrigger className="w-full bg-slate-950 border-slate-700 text-slate-200 mt-1">
+                          <SelectValue placeholder="Uncategorized" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-950 border-slate-700 text-slate-200">
+                          <SelectItem value="none">Uncategorized</SelectItem>
+                          {subjects.map((subject) => (
+                            <SelectItem
+                              key={subject.id}
+                              value={subject.id.toString()}
+                            >
+                              {subject.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label

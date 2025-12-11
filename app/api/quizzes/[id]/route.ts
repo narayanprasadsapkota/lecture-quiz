@@ -102,7 +102,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { title, description } = body;
+    const { title, description, subjectId } = body;
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -110,7 +110,7 @@ export async function PUT(
 
     const [updatedQuiz] = await db
       .update(quizzes)
-      .set({ title, description })
+      .set({ title, description, subjectId })
       .where(eq(quizzes.id, parseInt(id)))
       .returning();
 

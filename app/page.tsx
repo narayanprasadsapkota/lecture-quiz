@@ -11,6 +11,8 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   PlusCircle,
   BookOpen,
@@ -18,7 +20,19 @@ import {
   Loader2,
   LogOut,
   FileJson,
+  FolderPlus,
+  X,
+  Plus,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { isAuthenticated, clearAuth } from "@/lib/auth";
@@ -28,18 +42,32 @@ interface QuizSummary {
   title: string;
   description: string;
   questionCount: number;
+  subjectId: number | null;
+}
+
+interface Subject {
+  id: number;
+  name: string;
+  description: string | null;
 }
 
 export default function Home() {
   const router = useRouter();
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectDescription, setNewSubjectDescription] = useState("");
+  const [isSubjectDialogOpen, setIsSubjectDialogOpen] = useState(false);
+  const [submittingSubject, setSubmittingSubject] = useState(false);
 
   useEffect(() => {
     const authStatus = isAuthenticated();
     setIsAuth(authStatus);
-    fetchQuizzes();
+    Promise.all([fetchQuizzes(), fetchSubjects()]).finally(() =>
+      setLoading(false)
+    );
   }, []);
 
   const handleLogout = () => {
@@ -59,9 +87,51 @@ export default function Home() {
         toast.error("Failed to load quizzes");
       }
     } catch (error) {
+      toast.error("An error occurred loading quizzes");
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch("/api/subjects");
+      if (res.ok) {
+        const data = await res.json();
+        setSubjects(data);
+      }
+    } catch (error) {
+      console.error("Failed to load subjects");
+    }
+  };
+
+  const handleCreateSubject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubjectName.trim()) return;
+
+    setSubmittingSubject(true);
+    try {
+      const res = await fetch("/api/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newSubjectName,
+          description: newSubjectDescription,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Subject created successfully");
+        setNewSubjectName("");
+        setNewSubjectDescription("");
+        setIsSubjectDialogOpen(false);
+        fetchSubjects();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Failed to create subject");
+      }
+    } catch (error) {
       toast.error("An error occurred");
     } finally {
-      setLoading(false);
+      setSubmittingSubject(false);
     }
   };
 
@@ -77,16 +147,89 @@ export default function Home() {
               Select a lecture to start the quiz or create a new one.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap justify-center md:justify-end">
             {isAuth ? (
               <>
+                <Dialog
+                  open={isSubjectDialogOpen}
+                  onOpenChange={setIsSubjectDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-cyan-600 text-cyan-400 hover:bg-cyan-950"
+                    >
+                      <FolderPlus className="mr-2 h-5 w-5" />
+                      New Subject
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Subject</DialogTitle>
+                      <DialogDescription>
+                        organize your quizzes by creating a new subject
+                        category.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateSubject}>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="name">Subject Name</Label>
+                          <Input
+                            id="name"
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            placeholder="e.g., Mathematics, Physics"
+                            required
+                            className="bg-slate-900 border-slate-700"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="description">
+                            Description (Optional)
+                          </Label>
+                          <Input
+                            id="description"
+                            value={newSubjectDescription}
+                            onChange={(e) =>
+                              setNewSubjectDescription(e.target.value)
+                            }
+                            placeholder="Brief description of the subject"
+                            className="bg-slate-900 border-slate-700"
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="submit"
+                          className="bg-cyan-600 hover:bg-cyan-700"
+                          disabled={submittingSubject}
+                        >
+                          {submittingSubject ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Create Subject
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
                 <Link href="/create">
                   <Button
                     size="lg"
                     className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
                   >
                     <PlusCircle className="mr-2 h-5 w-5" />
-                    Create New Quiz
+                    Create Quiz
                   </Button>
                 </Link>
                 <Link href="/create-bulk">
@@ -105,7 +248,6 @@ export default function Home() {
                   className="border-red-600 text-red-400 hover:bg-red-950"
                 >
                   <LogOut className="mr-2 h-5 w-5" />
-                  Logout
                 </Button>
               </>
             ) : (
@@ -125,52 +267,81 @@ export default function Home() {
           <div className="flex justify-center py-20">
             <Loader2 className="h-10 w-10 animate-spin text-cyan-500" />
           </div>
-        ) : quizzes.length === 0 ? (
+        ) : subjects.length === 0 &&
+          quizzes.filter((q) => !q.subjectId).length === 0 ? (
           <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-slate-800">
             <h3 className="text-xl text-slate-300 font-semibold">
-              No quizzes found
+              No categories found
             </h3>
             <p className="text-slate-500 mt-2">
-              Create your first lecture quiz to get started.
+              Create your first subject category to get started.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quizzes.map((quiz) => (
-              <Card
-                key={quiz.id}
-                className="bg-slate-900 border-slate-800 text-slate-200 hover:border-cyan-500/50 transition-all hover:shadow-lg hover:shadow-cyan-900/20 flex flex-col"
+            {subjects.map((subject) => {
+              const count = quizzes.filter(
+                (q) => q.subjectId === subject.id
+              ).length;
+
+              return (
+                <Link
+                  key={subject.id}
+                  href={`/subjects/${subject.id}`}
+                  className="block group h-full"
+                >
+                  <Card className="h-full bg-slate-900 border-slate-800 text-slate-200 group-hover:border-cyan-500/50 transition-all group-hover:shadow-lg group-hover:shadow-cyan-900/20 flex flex-col">
+                    <CardHeader>
+                      <CardTitle className="text-xl text-cyan-400">
+                        {subject.name}
+                      </CardTitle>
+                      <CardDescription className="text-slate-400 line-clamp-2 min-h-[2.5rem]">
+                        {subject.description || "No description provided."}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <div className="text-sm text-slate-500 font-medium bg-slate-950 inline-block px-3 py-1 rounded-full border border-slate-800">
+                        {count} Quizzes
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <span className="text-sm text-cyan-500 font-medium flex items-center group-hover:underline">
+                        View Quizzes <BookOpen className="ml-2 h-4 w-4" />
+                      </span>
+                    </CardFooter>
+                  </Card>
+                </Link>
+              );
+            })}
+
+            {/* Uncategorized Card */}
+            {quizzes.filter((q) => !q.subjectId).length > 0 && (
+              <Link
+                href="/subjects/uncategorized"
+                className="block group h-full"
               >
-                <CardHeader>
-                  <CardTitle className="text-xl text-cyan-400 line-clamp-1">
-                    {quiz.title}
-                  </CardTitle>
-                  <CardDescription className="text-slate-400 line-clamp-2 min-h-[2.5rem]">
-                    {quiz.description || "No description provided."}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="text-sm text-slate-500 font-medium bg-slate-950 inline-block px-3 py-1 rounded-full border border-slate-800">
-                    {quiz.questionCount} Questions
-                  </div>
-                </CardContent>
-                <CardFooter className="grid grid-cols-2 gap-3">
-                  <Link href={`/quiz/${quiz.id}`} className="w-full">
-                    <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white">
-                      <BookOpen className="mr-2 h-4 w-4" /> Start
-                    </Button>
-                  </Link>
-                  <Link href={`/admin/${quiz.id}`} className="w-full">
-                    <Button
-                      variant="outline"
-                      className="w-full border-slate-700 text-slate-800 hover:bg-slate-200"
-                    >
-                      <Edit className="mr-2 h-4 w-4" /> Edit
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
+                <Card className="h-full bg-slate-900 border-slate-800 text-slate-200 group-hover:border-cyan-500/50 transition-all group-hover:shadow-lg group-hover:shadow-cyan-900/20 flex flex-col">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-cyan-400">
+                      Uncategorized
+                    </CardTitle>
+                    <CardDescription className="text-slate-400 line-clamp-2 min-h-[2.5rem]">
+                      Quizzes without a specific category.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <div className="text-sm text-slate-500 font-medium bg-slate-950 inline-block px-3 py-1 rounded-full border border-slate-800">
+                      {quizzes.filter((q) => !q.subjectId).length} Quizzes
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <span className="text-sm text-cyan-500 font-medium flex items-center group-hover:underline">
+                      View Quizzes <BookOpen className="ml-2 h-4 w-4" />
+                    </span>
+                  </CardFooter>
+                </Card>
+              </Link>
+            )}
           </div>
         )}
       </div>
