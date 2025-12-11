@@ -161,7 +161,7 @@ export default function QuizPage({
             <Link href="/">
               <Button
                 variant="outline"
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="border-slate-700 text-slate-800 hover:bg-slate-200"
               >
                 Home
               </Button>

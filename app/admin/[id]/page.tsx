@@ -418,7 +418,7 @@ export default function AdminPage({
                       <Button
                         onClick={cancelEdit}
                         variant="outline"
-                        className="border-slate-700"
+                        className="border-slate-700 text-slate-800 hover:bg-slate-200"
                       >
                         <X className="mr-2 h-4 w-4" /> Cancel
                       </Button>

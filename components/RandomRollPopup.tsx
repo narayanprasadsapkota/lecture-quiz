@@ -13,11 +13,45 @@ export default function RandomRollPopup() {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [generatedNumbers, setGeneratedNumbers] = useState<Set<number>>(
+    new Set()
+  );
   const popupRef = useRef<HTMLDivElement>(null);
 
   const generateRandom = () => {
-    const random = Math.floor(Math.random() * maxNumber) + 1;
+    // If all numbers have been generated, show a message
+    if (generatedNumbers.size >= maxNumber) {
+      alert(
+        `All ${maxNumber} roll numbers have been generated! Please reset or increase the maximum number.`
+      );
+      return;
+    }
+
+    let random: number;
+    let attempts = 0;
+    const maxAttempts = maxNumber * 10; // Safety limit to prevent infinite loops
+
+    // Keep generating until we find a number that hasn't been used
+    do {
+      random = Math.floor(Math.random() * maxNumber) + 1;
+      attempts++;
+
+      if (attempts > maxAttempts) {
+        alert(
+          "Error generating unique roll number. Please reset and try again."
+        );
+        return;
+      }
+    } while (generatedNumbers.has(random));
+
+    // Add the new number to the set of generated numbers
+    setGeneratedNumbers((prev) => new Set(prev).add(random));
     setResult(random);
+  };
+
+  const resetGeneratedNumbers = () => {
+    setGeneratedNumbers(new Set());
+    setResult(null);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -90,7 +124,7 @@ export default function RandomRollPopup() {
       onMouseDown={handleMouseDown}
       className="select-none"
     >
-      <Card className="w-80 bg-slate-900 border-purple-500/50 shadow-2xl shadow-purple-900/20">
+      <Card className="w-64 bg-slate-900 border-purple-500/50 shadow-2xl shadow-purple-900/20">
         <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2">
             <GripVertical className="h-4 w-4 text-slate-500" />
@@ -120,6 +154,15 @@ export default function RandomRollPopup() {
             />
           </div>
 
+          {generatedNumbers.size > 0 && (
+            <div className="text-xs text-slate-400 bg-slate-950 p-2 rounded border border-slate-700">
+              <span className="font-semibold text-purple-400">
+                {generatedNumbers.size}
+              </span>{" "}
+              / {maxNumber} roll numbers generated
+            </div>
+          )}
+
           <Button
             onClick={generateRandom}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold"
@@ -127,6 +170,16 @@ export default function RandomRollPopup() {
             <Dices className="mr-2 h-4 w-4" />
             Generate Random Roll
           </Button>
+
+          {generatedNumbers.size > 0 && (
+            <Button
+              onClick={resetGeneratedNumbers}
+              variant="outline"
+              className="w-full border-slate-700 text-slate-800 hover:bg-slate-200 hover:text-white"
+            >
+              Reset Session
+            </Button>
+          )}
 
           {result !== null && (
             <div className="text-center p-6 bg-gradient-to-br from-purple-950 to-pink-950 rounded-lg border border-purple-500/30 animate-in fade-in zoom-in">
